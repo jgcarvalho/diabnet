@@ -18,7 +18,13 @@ Na prática, o modelo tem como entrada um conjunto determinado de SNPs do pacien
 
 #### Distribuição de probabilidades
 
+No conjunto de teste, X pacientes desenvolveram diabetes antes dos 50 anos e Y pacientes depois dos 50 anos. Essa informação pode ser obtida devido às múltiplos diagnósticos que os pacientes foram submetidos ao longo do tempo. A predição para esses dois grupos de pacientes resulta, como esperado, em probabilidades mais altas para o primeiro grupo. Além disso, é possível notar uma uma grande diferença na predição para os grupos em relação a predição para indivíduos com mais de 60 anos e que até o momento não haviam sido diagnosticados com diabetes. 
+
+![distribuicao](images/distribution_first_positives.png)
+
 #### Treinamento das redes neurais artificiais
+
+O treinamento das redes utilizando cada um dos três conjuntos de SNPs demonstrou características interessantes que acreditamos ser uma consequência dos métodos de regularização empregados. Pelo gráfico abaixo podemos notar que os modelos treinados tanto com o conjunto de SNPs aleatórios quanto o de SNPs não correlacionados não conseguem um ajuste equivalente ao modelo treinado com o conjunto de SNPs correlacionados. Esse efeito é ainda mais evidente quando comparamos a acurácia balanceada obtida nas validações, a qual atinge $~0.8$ para o conjunto de SNPs correlacionados enquanto permanece próxima a $0.5$ (acurácia esperada para um modelo aleatório, sem capacidade de predição).
 
 ![treinamento](images/training_results.png)
 
