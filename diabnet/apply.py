@@ -90,10 +90,10 @@ class Predictor(object):
         return features
 
 def get_negative_data(fn, columns):
-    script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
-    abs_file_path = os.path.join(script_dir, fn)
-
-    df = pd.read_csv(abs_file_path)
+    # script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
+    # abs_file_path = os.path.join(script_dir, fn)
+    print("NEGATIVE FILE", fn)
+    df = pd.read_csv(fn)
     # feat = df.values[:,2:-1]
     feat = df[columns].values
     return feat

@@ -9,7 +9,7 @@ def get_feature_names(fn, BMI=False, sex=True, parents_diagnostics=True):
     col_names = pd.read_csv(fn).columns.values
     # always remove "id" "T2D(label)" "mo" and "fa"
     # mo_t2d and fa_t2d are removed here but can be inserted at correct position later
-    col_names = np.setdiff1d(col_names, np.array(['id','T2D','mo','fa','mo_t2d', 'fa_t2d','sex','Unnamed: 0']), assume_unique=True)
+    col_names = np.setdiff1d(col_names, np.array(['id','T2D','mo','fa','mo_t2d', 'fa_t2d','sex','Unnamed: 0', '', ' ']), assume_unique=True)
 
     if not BMI:
         col_names = np.setdiff1d(col_names, np.array(['BMI']), assume_unique=True)
