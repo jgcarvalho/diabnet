@@ -1,19 +1,38 @@
 ## Diabnet
 
-Este projeto surgiu a partir colaboração com o pesquisador <Marcio>, do laboratório do Dr..... Através deles obtivemos um dataset com 2344 pacientes dos quais 541 apresentam diabetes tipo 2. Além do diagnóstico (_label_) e de características como sexo, idade e diagnóstico dos pais (nem sempre disponível), recebemos 3 conjuntos de 1000 SNPs cada. Esses 3 conjuntos foram selecionados pelo Márcio de acordo com a correlação dos SNPs em relação ao diagnóstico e são:
+Este projeto surgiu a partir colaboração com o pesquisador Márcio?, do laboratório do Dr ???. Através deles obtivemos um dataset com 2344 pacientes dos quais 541 apresentam diabetes tipo 2. Além do diagnóstico (_label_) e de características como sexo, idade e diagnóstico dos pais (nem sempre disponível), recebemos 3 conjuntos de 1000 [SNPs](https://pt.wikipedia.org/wiki/Polimorfismo_de_nucleot%C3%ADdeo_%C3%BAnico) cada. Esses 3 conjuntos foram selecionados pelo Márcio de acordo com a correlação dos SNPs em relação ao diagnóstico e são:
 
 1. conjunto de SNPs correlacionados
 2. conjunto de SNPs não correlacionados
 3. conjunto de SNPs selecionados aleatóriamente
 
-Uma propriedade intessante desses dados é que uma parte dos pacientes possui vários diagnósticos em intervalos de 5 anos. Por exemplo, diagnósticos aos 30, 35 e 40 anos. Isso permite determinar aproximadamente qual a idade a doença se desenvolveu .
+Uma propriedade intessante desses dados é que uma parte dos pacientes possui vários diagnósticos em intervalos de 5 anos. Por exemplo, diagnósticos aos 30, 35 e 40 anos. Isso permite determinar aproximadamente qual a idade a doença se desenvolveu.
 
 ### Objetivo
 
-Na posse desses dados, nosso objetivo foi construir um predicot
+Na posse desses dados, nosso objetivo foi construir um modelo capaz de predizer qual o risco de um paciente desenvolver diabetes tipo 2 ao longo da vida. 
 
+Na prática, o modelo tem como entrada um conjunto determinado de SNPs do paciente, sua idade, sexo e o diagnóstico dos pais (este último, quando estiver disponível). O resultado do modelo são distribuições de probabilidades do indivíduo desenvolver diabetes tipo 2 ao longo de várias faixas etárias. Esses resultados podem então ser comparados com outros pacientes, por exemplo, com pessoas com mais de 60 anos que não desenvolveram diabetes (**negativos**) ou com jovens diabéticos para assim estimar qual o risco relativo do paciente.
 
+### Resultados
 
+#### Distribuição de probabilidades
+
+#### Treinamento das redes neurais artificiais
+
+#### Teste do modelo
+
+#### Teste do modelo excluindo pacientes jovens negativos
+
+Outros resultados:
+
+- Avaliação da predição para famílias
+- Avaliação da predição por núcleos familiares (grupos de pais + filhos)
+- Importância dos atributos na predição.
+
+### Métodos
+
+O modelo escolhido foi uma rede neural artificial _feed-forward_. A primeira camada é composta por neurônios localmente conectados (_locally connected layer_) que transforma o input para $x_i$   
 
  Welcome to GitHub Pages
 
