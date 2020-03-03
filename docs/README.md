@@ -1,8 +1,21 @@
 ## Diabnet
 
+Este projeto surgiu a partir colaboração com o pesquisador <Marcio>, do laboratório do Dr..... Através deles obtivemos um dataset com 2344 pacientes dos quais 541 apresentam diabetes tipo 2. Além do diagnóstico (_label_) e de características como sexo, idade e diagnóstico dos pais (nem sempre disponível), recebemos 3 conjuntos de 1000 SNPs cada. Esses 3 conjuntos foram selecionados pelo Márcio de acordo com a correlação dos SNPs em relação ao diagnóstico e são:
+
+1. conjunto de SNPs correlacionados
+2. conjunto de SNPs não correlacionados
+3. conjunto de SNPs selecionados aleatóriamente
+
+Uma propriedade intessante desses dados é que uma parte dos pacientes possui vários diagnósticos em intervalos de 5 anos. Por exemplo, diagnósticos aos 30, 35 e 40 anos. Isso permite determinar aproximadamente qual a idade a doença se desenvolveu .
+
+### Objetivo
+
+Na posse desses dados, nosso objetivo foi construir um predicot
 
 
-## Welcome to GitHub Pages
+
+
+ Welcome to GitHub Pages
 
 You can use the [editor on GitHub](https://github.com/jgcarvalho/diabnet/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
 
