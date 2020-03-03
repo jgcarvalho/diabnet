@@ -32,46 +32,6 @@ Outros resultados:
 
 ### Métodos
 
-O modelo escolhido foi uma rede neural artificial _feed-forward_. A primeira camada é composta por neurônios localmente conectados (_locally connected layer_) que transforma o input para  $\sum_n (x)$ 
+O modelo escolhido foi uma rede neural artificial _feed-forward_. Nela, a primeira camada é composta por neurônios localmente conectados (_locally connected layer_) que transforma o input em um vetor  $x$ de valores reais, sendo um valor para cada atributo. Logo o vetor tem dimensão igual ao número de atributos (_features_). A segunda camada é uma _fully connected_ com 256 neurônios e função de ativação _Softplus_.E a camada de saída possui um neurônio com função de ativação sigmóide.
 
-$$
-\sum_n (x)
-$$
-
- Welcome to GitHub Pages
-
-You can use the [editor on GitHub](https://github.com/jgcarvalho/diabnet/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
-
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
-
-### Markdown
-
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
-
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/jgcarvalho/diabnet/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+Dois métodos de regularização foram utilizados. Na primeira camada utilizamos uma combinação de $l_1$ e $l_2$ no estilo da ElasticNet. A intenção dessa regularização é forçar o valor dos atributos para zero, reduzindo a influência dos menos significantes para o modelo. Na segunda camada utilizamos um dropout com p=0.5. Esse dropout tem duplo objetivo: durante o treinamento ele atua como um regularizador, no entanto ele permanece ativo durante a inferência para aplicação do método de MC Dropout como proposto por Gal. Com esse método, múltiplas inferências para o mesmo input produzem uma distribuição de probabilidades o que nos permite avaliar a incerteza do modelo.
