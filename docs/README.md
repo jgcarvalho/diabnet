@@ -20,6 +20,8 @@ Na prática, o modelo tem como entrada um conjunto determinado de SNPs do pacien
 
 #### Treinamento das redes neurais artificiais
 
+![treinamento](images/training_results.png)
+
 #### Teste do modelo
 
 #### Teste do modelo excluindo pacientes jovens negativos
