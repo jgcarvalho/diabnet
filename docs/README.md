@@ -32,7 +32,11 @@ Outros resultados:
 
 ### Métodos
 
-O modelo escolhido foi uma rede neural artificial _feed-forward_. A primeira camada é composta por neurônios localmente conectados (_locally connected layer_) que transforma o input para $x_i$   
+O modelo escolhido foi uma rede neural artificial _feed-forward_. A primeira camada é composta por neurônios localmente conectados (_locally connected layer_) que transforma o input para  $\sum_n (x)$ 
+
+$$
+\sum_n (x)
+$$
 
  Welcome to GitHub Pages
 
