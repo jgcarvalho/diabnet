@@ -10,11 +10,6 @@ jobs:
   
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.8.5]
-      fail-fast: false
-
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python
@@ -25,8 +20,7 @@ jobs:
         id: full-python-version
         run: echo ::set-output name=version::$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))")
       - name: Install poetry
-        run: |
-          pip install poetry
+        run: pip install poetry
       - name: Configure poetry
         run: poetry config virtualenvs.in-project true
       - name: Set up cache
