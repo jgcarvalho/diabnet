@@ -4,6 +4,7 @@ from torch.utils.data import random_split
 
 # DATASET = './datasets/visits_sp_unique_train_positivo_1000_negative_0.csv'
 
+
 def net(fn_dataset):
     # neural network to SELECTED features with fixed dropout=0.5 during hyperopt
     for i in range(100):
@@ -17,10 +18,10 @@ def net(fn_dataset):
             "dp3": 0,
             "lr": 0.0007,
             "wd": 0.000001,
-            "lambda1_dim1":0.0003,
-            "lambda2_dim1":0.05,
-            "lambda1_dim2":0.0008,
-            "lambda2_dim2":0.05
+            "lambda1_dim1": 0.0003,
+            "lambda2_dim1": 0.05,
+            "lambda1_dim2": 0.0008,
+            "lambda2_dim2": 0.05
             # to explore new weights
             # "lambda1_dim1":0.0002,
             # "lambda2_dim1":0.03,False
@@ -30,18 +31,31 @@ def net(fn_dataset):
 
         epochs = 1000
 
-
-        features = data.get_feature_names(fn_dataset, BMI=False, sex=True, parents_diagnostics=True)
+        features = data.get_feature_names(
+            fn_dataset, BMI=False, sex=True, parents_diagnostics=True
+        )
         # print(features)
-        
-        dataset = data.DiabDataset(fn_dataset, features, random_age=False, soft_label=True)
-        len_trainset = int(0.9*len(dataset))
-        trainset, valset = random_split(dataset, [len_trainset, len(dataset)-len_trainset])
 
-        train(params, trainset, valset, epochs, 'diabnet/models/model-sp-soft-label-positives-1000-cyclicLR.pth', device='cuda')
+        dataset = data.DiabDataset(
+            fn_dataset, features, random_age=False, soft_label=True
+        )
+        len_trainset = int(0.9 * len(dataset))
+        trainset, valset = random_split(
+            dataset, [len_trainset, len(dataset) - len_trainset]
+        )
+
+        train(
+            params,
+            trainset,
+            valset,
+            epochs,
+            "diabnet/models/model-sp-soft-label-positives-1000-cyclicLR.pth",
+            device="cuda",
+        )
         # break to train only one model
         break
 
+
 if __name__ == "__main__":
 
-    net('./datasets/visits_sp_unique_train_positivo_1000_negative_0.csv')
+    net("./datasets/visits_sp_unique_train_positivo_1000_negative_0.csv")
