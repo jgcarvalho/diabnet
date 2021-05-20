@@ -58,4 +58,4 @@ def net(fn_dataset):
 
 if __name__ == "__main__":
 
-    net("./datasets/visits_sp_unique_train_positivo_1000_negative_0.csv")
+    net("./data/visits_sp_unique_train_positivo_1000_random_0.csv")
