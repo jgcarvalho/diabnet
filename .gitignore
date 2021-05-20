@@ -1,3 +1,6 @@
+# VSCode settings
+.vscode/
+
 # Poetry local configuration
 poetry.toml
 
