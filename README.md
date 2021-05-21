@@ -1,19 +1,36 @@
-## Welcome to GitHub Pages
+# Type 2 Diabetes Mellitus Neural Network (DiabNet)
 
-You can use the [editor on GitHub](https://github.com/jgcarvalho/diabnet/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
+A Neural Network to predict type 2 diabetes (T2D) using a collection of SNPs highly correlated with T2D.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+## Installation & Configuration
 
-### Markdown
+To install the latest version, clone this repository:
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+```bash
+git clone https://github.com/zgcarvalho/diabnet.git
+```
 
-```markdown
-Syntax highlighted code block
+Install [poetry](https://python-poetry.org/) with [pip](https://pip.pypa.io/en/stable/):
 
-# Header 1
-## Header 2
-### Header 3
+```bash
+pip install poetry
+```
 
-- Bulleted
-- List
+Configure poetry to create a virtual environment inside the project:
+
+```bash
+poetry config virtualenvs.create true
+poetry config virtualenvs.in-project true
+```
+
+Install dependencies:
+
+```bash
+poetry install
+```
+
+To start the virtual environment, run:
+
+```bash
+poetry shell
+```
