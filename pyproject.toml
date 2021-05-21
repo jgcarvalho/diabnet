@@ -22,7 +22,7 @@ uncertainty-calibration = "^0.0.9"
 flake8 = "^3.9.2"
 
 [tool.poetry.dev-dependencies]
-pytest = "^5.2"
+pytest = "^6.2"
 pynvim = "^0.4.2"
 mypy = "^0.812"
 pylint = ">=2.6.0"
