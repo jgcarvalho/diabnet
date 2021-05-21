@@ -18,20 +18,6 @@ class LocallyConnected(nn.Module):
     characteristic resembles genetic effects like dominance. However may be
     necessary more data to acquiry a good parametrization because some SNPs
     are very rare and homo recessive individuals are difficult to observed.
-
-    Parameters
-    ----------
-    output_size : int
-        Number of values after lc layer. This number must be the same as the
-        number of columns in the input matrix (n_feat).
-    in_channels : int, optional
-        Number of inputs for each lc neuron, by default 2.
-    out_channels : int, optional
-        Number of outputs for each lc neuron, by default 1.
-    bias : bool, optional
-        Whether to use bias, by default False.
-    activation : str, optional
-        A activation function to be used, by default `identity`.
     """
 
     def __init__(
@@ -42,6 +28,26 @@ class LocallyConnected(nn.Module):
         bias: bool = False,
         activation: str = "identity",
     ):
+        """
+        Parameters
+        ----------
+        output_size : int
+            Number of values after lc layer. This number must be the same as the
+            number of columns in the input matrix (n_feat).
+        in_channels : int, optional
+            Number of inputs for each lc neuron, by default 2.
+        out_channels : int, optional
+            Number of outputs for each lc neuron, by default 1.
+        bias : bool, optional
+            Whether to use bias, by default False.
+        activation : str, optional
+            A activation function to be used, by default `identity`.
+
+        Raises
+        ------
+        ValueError
+            `activation` must be `tanh`, `sigmoid`, `gelu` or `identity`.
+        """
         super(LocallyConnected, self).__init__()
 
         # Define weights
