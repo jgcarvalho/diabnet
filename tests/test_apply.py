@@ -1,7 +1,4 @@
 import unittest
-import sys
-
-sys.path.append("../")
 import diabnet.apply as apply
 from diabnet.apply import encode_features
 

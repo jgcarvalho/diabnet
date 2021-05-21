@@ -1,8 +1,6 @@
 import sys
 import unittest
 import random
-
-sys.path.append("../")
 import diabnet.data as data
 
 
