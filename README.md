@@ -34,3 +34,7 @@ To start the virtual environment, run:
 ```bash
 poetry shell
 ```
+
+## Training DiabNet
+
+## Data analysis
