@@ -143,11 +143,9 @@ class Model(nn.Module):
         # Define fully connected with batch normalization
         self.fc = nn.Linear(n_feat, n_hidden, bias=False)
         self.bn = nn.BatchNorm1d(n_hidden)
-        # Define activation function
-        # self.act = nn.Softplus()
-        # self.act = nn.ReLU()
+        # Define activation function 
+        # [Options: GELU, Softplus, ReLU, ELU]
         self.act = nn.GELU()
-        # self.act = nn.ELU()
 
         # Output Layer
         self.exit = nn.Linear(n_hidden, 1)
