@@ -218,6 +218,18 @@ class Model(nn.Module):
 
 
 def load(filename: str) -> Model:
+    """Load parameters from previously trained models.
+
+    Parameters
+    ----------
+    filename : str
+        A path to a .pth file with the model parameters.
+
+    Returns
+    -------
+    Model
+        A previously trained model.
+    """
     # Load previously trained paramaters to Model
     net = torch.load(filename, map_location="cpu")
 

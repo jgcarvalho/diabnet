@@ -1,8 +1,31 @@
+import torch
 import numpy as np
 from typing import Union, List
 
 
-def ece(targets: Union[np.ndarray, List], predictions: Union[np.ndarray, List], bins: int = 10) -> float:
+def ece_mce(preds, targets, bins=10):
+    lower_bound = torch.arange(0.0, 1.0, 1.0 / bins)
+    upper_bound = lower_bound + 1.0 / bins
+
+    ece = torch.zeros(1, device=preds.device)
+    mce = torch.zeros(1, device=preds.device)
+
+    for i in range(bins):
+        mask = (preds > lower_bound[i]) * (preds <= upper_bound[i])
+        if torch.any(mask):
+            # print(lower_bound[i], upper_bound[i], preds[mask], torch.mean(targets[mask]))
+            delta = torch.abs(torch.mean(preds[mask]) - torch.mean(targets[mask]))
+            ece += delta * torch.mean(mask.float())
+            mce = torch.max(mce, delta)
+
+    return ece, mce
+
+
+def ece(
+    targets: Union[np.ndarray, List],
+    predictions: Union[np.ndarray, List],
+    bins: int = 10,
+) -> float:
     """Calculate Expected Calibration Error (ECE) between target labels and predicted labels.
 
     Parameters
@@ -56,9 +79,13 @@ def ece(targets: Union[np.ndarray, List], predictions: Union[np.ndarray, List], 
     return ece
 
 
-def mce(targets: Union[np.ndarray, List], predictions: Union[np.ndarray, List], bins: int = 10):
+def mce(
+    targets: Union[np.ndarray, List],
+    predictions: Union[np.ndarray, List],
+    bins: int = 10,
+):
     """Calculate Maximum Calibration Error (MCE) between target labels and predicted labels.
-    
+
     Parameters
     ----------
     targets : Union[np.ndarray, List]
@@ -69,7 +96,7 @@ def mce(targets: Union[np.ndarray, List], predictions: Union[np.ndarray, List], 
 
     bins : int, optional
         Number of bins, by default 10
-    
+
     Returns
     -------
     mce : float

@@ -1,208 +1,291 @@
-from diabnet import data
-from diabnet.model import Model
-from diabnet.optim import RAdam
+from typing import Dict, Any, Optional
+import datetime
+import torch
 from torch.utils.data import DataLoader, random_split
 from torch.nn import BCEWithLogitsLoss
-from torch.optim import Adam
-import torch
-import numpy as np
-from sklearn.metrics import accuracy_score, balanced_accuracy_score, confusion_matrix, roc_auc_score
-import datetime
-# RADAM
-import math
-# import torch
-# from torch.optim.optimizer import Optimizer, required
+from torch.optim import Adam, SGD, AdamW
+from torch.optim.lr_scheduler import CosineAnnealingLR, StepLR
+from sklearn.metrics import (
+    accuracy_score,
+    balanced_accuracy_score,
+    confusion_matrix,
+    roc_auc_score,
+    average_precision_score,
+    fbeta_score,
+)
+from diabnet.model import Model
+from diabnet.metrics import ece_mce
+from diabnet.data import DiabDataset
 
-def train(params, training_set, validation_set, epochs, fn_to_save_model, is_trial=False, device='cuda'):
-    device=torch.device(device)
 
-# Current best value is 0.3591878928244114 with parameters: 
-# {'l1_neurons': 38, 
-# 'l2_neurons': 32, 
-# 'dropout_1': 0.1, 
-# 'dropout_2': 0.1, 
-# 'learning_rate': 2.703525027574716e-05, 
-# 'weight_decay': 0.00023586800364526562}
+def l1_l2_regularization(
+    lc_params: torch.nn.parameter.Parameter,
+    lambda1_dim1: float,
+    lambda2_dim1: float,
+    lambda1_dim2: float,
+    lambda2_dim2: float,
+):
+    """[summary]
 
-##### one layer 
-# Current best value is 0.3367238938808441 with parameters: 
-# {'l1_neurons': 140, 
-# 'dropout_1': 0.5, 
-# 'learning_rate': 1.4787445433385137e-05, 
-# 'weight_decay': 0.0002787682549966316}
+    Parameters
+    ----------
+    lc_params : torch.nn.parameter.Parameter
+        [description]
+    lambda1_dim1 : float
+        [description]
+    lambda2_dim1 : float
+        [description]
+    lambda1_dim2 : float
+        [description]
+    lambda2_dim2 : float
+        [description]
 
-##### two layers
+    Returns
+    -------
+    [type]
+        [description]
+    """
+    l1_regularization_dim1 = lambda2_dim1 * torch.sum(torch.norm(lc_params, 1, dim=1))
+    l2_regularization_dim1 = (
+        (1.0 - lambda2_dim1) / 2.0 * torch.sum(torch.norm(lc_params, 2, dim=1))
+    )
+    l1_regularization_dim2 = lambda2_dim2 * torch.sum(torch.norm(lc_params, 1, dim=2))
+    l2_regularization_dim2 = (
+        (1.0 - lambda2_dim2) / 2.0 * torch.sum(torch.norm(lc_params, 2, dim=2))
+    )
 
-    # if trial:
-    #     l1_neurons = trial.suggest_int('l1_neurons',2,192)
-    #     l2_neurons = 0
-    #     l3_neurons = 0
-    #     # dp0 = trial.suggest_discrete_uniform('dropout_0', 0.0, 1.0, 0.05)
-    #     dp0 = 0
-    #     dp1 = trial.suggest_discrete_uniform('dropout_1', 0.05, 1.0, 0.05)
-    #     dp2 = 0
-    #     dp3 = 0
-    #     lr = trial.suggest_loguniform('learning_rate', 1e-6, 1e-3)
-    #     wd = trial.suggest_loguniform('weight_decay', 1e-6, 1e-2)
-    # else:
-    #     l1_neurons = 100
-    #     l2_neurons = 0
-    #     l3_neurons = 0
-    #     dp0 = 0
-    #     dp1 = 0.05
-    #     dp2 = 0.0
-    #     dp3 = 0.0
-    #     # lr = 1.5e-05
-    #     lr = 3e-04
-    #     wd = 0.00045
+    dim1_loss = lambda1_dim1 * (l1_regularization_dim1 + l2_regularization_dim1)
+    dim2_loss = lambda1_dim2 * (l1_regularization_dim2 + l2_regularization_dim2)
 
-    # dataset = data.DiabDataset(fn_data, random_age=False)
-    # print(len(dataset))
-    # ltr, lva = int(0.7*len(dataset)), int(0.1*len(dataset))
-    # trainset, valset, testset = random_split(dataset, [ltr, lva, len(dataset)-ltr-lva])
+    return dim1_loss + dim2_loss
 
-    trainloader = DataLoader(training_set, batch_size=384, shuffle=True)
-    
-    valloader = DataLoader(validation_set, batch_size=64, shuffle=False)
 
-    # print("Number of features", training_set.dataset.n_feat)
+def train(
+    params: Dict[str, Any],
+    training_set: DiabDataset,
+    validation_set: DiabDataset,
+    epochs: int,
+    fn_to_save_model: str = "",
+    logfile: Optional[str] = None,
+    is_trial: bool = False,
+    device: str = "cuda",
+):
+    # Define the device on which a torch.Tensor will be allocated.
+    device = torch.device(device)
+
+    # Create a training set
+    trainloader = DataLoader(
+        training_set, batch_size=params["batch-size"], shuffle=True
+    )
+
+    # Create a validation set
+    valloader = DataLoader(
+        validation_set, batch_size=len(validation_set), shuffle=False
+    )
+
+    # Use soft labels
+    use_correction = True
+
+    # Get age index on dataset
+    age_idx = training_set.dataset.feat_names.index("AGE")
+
+    # Define DiabNet model
     model = Model(
-        training_set.dataset.n_feat, 
-        params["l1_neurons"], 
-        params["l2_neurons"], 
-        params["l3_neurons"], 
-        params["dp0"], 
-        params["dp1"], 
-        params["dp2"], 
-        params["dp3"])
+        training_set.dataset.n_feat,
+        params["hidden-neurons"],
+        params["dropout"],
+        params["lc-layer"],
+        use_correction,
+        params["soft-label-baseline"],
+        params["soft-label-topline"],
+        params["soft-label-baseline-slope"],
+        age_idx,
+    )
     model.to(device)
 
+    # Define loss function
     loss_func = BCEWithLogitsLoss()
     loss_func.to(device)
 
-    # optimizer = Adam(model.parameters(), lr=params["lr"], weight_decay=params["wd"])
-    # optimizer = RAdam(model.parameters(), lr=0.0001)
-    # optimizer = Adam(model.parameters(), lr=params["lr"])
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.0007, momentum=0.999, nesterov=True)
-    scheduler = torch.optim.lr_scheduler.CyclicLR(optimizer, base_lr=0.001, max_lr=0.007, step_size_up=100, mode="triangular2", cycle_momentum=False)
+    # Define optimizer
+    if params["optimizer"] == "adamw":
+        optimizer = AdamW(
+            model.parameters(),
+            lr=params["lr"],
+            betas=(params["beta1"], params["beta2"]),
+            eps=params["eps"],
+            weight_decay=params["wd"],
+        )
+    else:
+        raise ValueError("`optimizer` must be `adamw`.")
+
+    # Define scheduler
+    scheduler = StepLR(
+        optimizer,
+        step_size=params["sched-steps"],
+        gamma=params["sched-gamma"],
+        last_epoch=-1,
+    )
 
     # lambda to L1 regularization at LC layer
-    lambda1_dim1 = params["lambda1_dim1"]
-    lambda2_dim1 = params["lambda2_dim1"]
-    lambda1_dim2 = params["lambda1_dim2"]
-    lambda2_dim2 = params["lambda2_dim2"]
+    lambda1_dim1 = params["lambda1-dim1"]
+    lambda2_dim1 = params["lambda2-dim1"]
+    lambda1_dim2 = params["lambda1-dim2"]
+    lambda2_dim2 = params["lambda2-dim2"]
 
+    # Flood regularization (flood penalty)
+    # Reference: https://arxiv.org/pdf/2002.08709.pdf
+    flood_penalty = params["flood-penalty"]
+
+    # Iterate through epochs
     for e in range(epochs):
-        # model.train()
-        # trainloader.dataset.random_age = True
+        # Activate to training mode
+        model.train()
 
+        # Initialize training loss, regularized training loss and number of batches
         training_loss, training_loss_reg, n_batchs = 0.0, 0.0, 0
+
+        # Iterate through training set
         for i, sample in enumerate(trainloader):
+            # Get input and true label
             x, y_true = sample
+
+            # Predict label
             y_pred = model(x.to(device))
-            # print(training_set.dataset.n_feat)
-            # print(y_pred)
-            # print(y_pred.shape)
+
+            # Calculate loss
             loss = loss_func(y_pred, y_true.to(device))
 
-            # elastic net regularization
-            lc_params = model.lc.weight
-            l1_regularization_dim1 = lambda2_dim1*torch.sum(torch.norm(lc_params,1, dim=1))
-            l2_regularization_dim1 = (1.0-lambda2_dim1)/2.0*torch.sum(torch.norm(lc_params,2, dim=1))
-            l1_regularization_dim2 = lambda2_dim2*torch.sum(torch.norm(lc_params,1, dim=2))
-            l2_regularization_dim2 = (1.0-lambda2_dim2)/2.0*torch.sum(torch.norm(lc_params,2, dim=2))
-            
-            dim1_loss = lambda1_dim1 * (l1_regularization_dim1 + l2_regularization_dim1)
-            dim2_loss = lambda1_dim2 * (l1_regularization_dim2 + l2_regularization_dim2)
+            # l1 and l2 regularization at LC layer
+            loss_reg = loss + l1_l2_regularization(
+                model.lc.weight, lambda1_dim1, lambda2_dim1, lambda1_dim2, lambda2_dim2
+            )
 
-            loss_reg = loss + dim1_loss + dim2_loss
+            # Flood regularization
+            # https://arxiv.org/pdf/2002.08709.pdf
+            flood = (loss_reg - flood_penalty).abs() + flood_penalty
 
+            # Sets the gradients of all optimized torch.Tensor s to zero.
             optimizer.zero_grad()
-            loss_reg.backward()
+
+            # Backpropogates the error
+            flood.backward()
+
+            # Performs a single optimization step
             optimizer.step()
 
+            # Accumulates loss
             training_loss += loss.item()
+
+            # Accumulates regularized loss
             training_loss_reg += loss_reg.item()
+
+            # Increment number of batches
             n_batchs += 1
 
+        # Updates learning rate of scheduler
+        scheduler.step()
+
+        # Calculate (regularized) training loss
         training_loss /= n_batchs
         training_loss_reg /= n_batchs
 
+        # Ignore epoch loss when optimizing hyperparameters
         if not is_trial:
-            # print only the loss of the last batch of each epoch
-            print("lreg DIM 1", dim1_loss)
-            print("lreg DIM 2", dim2_loss)
-            print("T epoch {}, loss {}, loss_with_regularization {}".format(e, training_loss, training_loss_reg))
+            status = f"T epoch {e}, loss {training_loss}, loss_with_regularization {training_loss_reg}"
+            if logfile is None:
+                print(status)
+            else:
+                logfile.write(status + "\n")
 
+        # Activate evaluation mode
+        model.eval()
 
-        # loss_sum, acc_sum, bacc_sum = 0, 0, 0
-        # loss_val_list, acc_val_list, bacc_val_list = [],[],[]
-        validation_loss = 0.0
-        cm = np.zeros((2,2))
-        n_batchs = 0
-        # valloader.dataset.random_age = False
-        for s in range(30):   
-            for i, sample in enumerate(valloader):
-                x, y_true = sample
-                y_pred = model(x.to(device))
+        # Iterate through validation set
+        for i, sample in enumerate(valloader):
+            # Get input and true label
+            x, y_true = sample
 
-                loss = loss_func(y_pred, y_true.to(device))
-                # loss_val_list.append(loss.item())
+            # Predict label
+            y_pred = model(x.to(device))
 
-                t = y_true.gt(0.5).cpu().detach().numpy()
-                p = y_pred.gt(0).cpu().detach().numpy()
-                # print(x)
-                # print(y_pred)
-                # print(torch.sigmoid(y_pred))
-                # print(p)
-                # return
-                # acc_val_list.append(accuracy_score(t, p))
-                # bacc_val_list.append(balanced_accuracy_score(t, p))
-                cm += np.array(confusion_matrix(t, p))
-                # auc = roc_auc_score(t, y_pred.detach().numpy())
-                # print(auc)
-                validation_loss += loss.item()
-                
-                n_batchs += 1 
-                # return
+            # Calculate function
+            loss = loss_func(y_pred, y_true.to(device))
 
-        validation_loss /= n_batchs # 30 because we are using 30 samples "for...range(30)"
-        validation_acc = np.sum(np.diag(cm)) / cm.sum()
-        validation_bacc = np.mean(np.diag(cm) / cm.sum(axis=1))
+            # ece and mce are calibration metrics
+            # ece, mce = ece_mce(y_pred, y_true)
 
+            # Binarize predictions
+            # NOTE: The true labels (y_true) are soft labels. Hence,
+            #  convert them to 0 or 1.
+            y_ = (y_true > 0.5).type(torch.float)
+
+            # Get ages
+            ages = x[:, 0:1, age_idx]
+
+            # Calculate binarized predictions
+            # NOTE: The pred labels are probabilities in the interval [0, 1].
+            #  Hence, convert them to 0 or 1.
+            p = model.sigmoid(y_pred, ages, with_correction=True)
+
+            # Calculate expected calibration error (ECE) and maximum
+            #  calibration error (MCE)
+            ece, mce = ece_mce(p, y_)
+
+            # Detach true and predicted labels to cpu
+            t = y_true.cpu().detach().numpy()
+            p = p.cpu().detach().numpy()
+
+            # Calculate metrics
+            t_b = t > 0.5
+            p_b = p > 0.5
+            cm = confusion_matrix(t_b, p_b)
+            acc = accuracy_score(t_b, p_b)
+            bacc = balanced_accuracy_score(t_b, p_b)
+            fscore = fbeta_score(t_b, p_b, beta=1.0)
+            auroc = roc_auc_score(t_b, p)
+            avg_prec = average_precision_score(t_b, p)
+
+        # Ignore epoch loss when optimizing hyperparameters
         if not is_trial:
-            print("V epoch {}, loss {}, acc {}, bacc {}".format(e, validation_loss, validation_acc, validation_bacc))
-            print("line is true, column is pred")
-            print(cm/30)
-        # print("V epoch {}, loss {}, acc {}, bacc {}".format(e, loss_sum/(n*20), acc_sum/(n*20), bacc_sum/(n*20)))
-
-        scheduler.step()
-
-    if is_trial:
-        print("V epoch {}, loss {}, acc {}, bacc {}".format(e, validation_loss, validation_acc, validation_bacc))
-        print(cm/30)
-        print(params)
-    # print("V epoch {}, loss {}, acc {}, bacc {}".format(e, loss_sum/(n*20), acc_sum/(n*20), bacc_sum/(n*20)))
-    # print(cm/20)
-    
+            status_0 = f"V epoch {e}, loss {loss.item()}, acc {acc:.3}, bacc {bacc:.3}, ece {ece.item():.3}, mce {mce.item():.3}, auc {auroc}, avg_prec {avg_prec}, fscore {fscore}"
+            status_1 = f"line is true, column is pred\n{cm}"
+            if logfile is None:
+                print(status_0)
+                print(status_1)
+            else:
+                logfile.write(status_0 + "\n")
+                logfile.write(status_1 + "\n")
 
     if fn_to_save_model != "":
         print("Saving model at {}".format(fn_to_save_model))
         torch.save(model, fn_to_save_model)
-        with open(fn_to_save_model+'.txt', 'w') as f:
+        with open(fn_to_save_model + ".txt", "w") as f:
             f.write(str(datetime.datetime.now()))
-            f.write("\nModel name: {}\n".format(fn_to_save_model))
-            # f.write("\nAccuracy: {}\n".format(np.median(acc_val_list)))
-            # f.write("\nBalanced Accuracy: {}\n".format(np.median(bacc_val_list)))
-            f.write("\nConfusion matrix:\n{}\n".format(cm/30))
-            f.write("\nT Loss: {}\n".format(training_loss))
-            f.write("\nT Loss(reg): {}\n".format(training_loss_reg))
-            f.write("\nV Loss: {}\n\n".format(validation_loss))
+            f.write(f"\nModel name: {fn_to_save_model}\n")
+            f.write(f"\nAccuracy: {acc}\n")
+            f.write(f"\nBalanced Accuracy: {bacc}\n")
+            f.write(f"\nF-score: {fscore}\n")
+            f.write(f"\nECE: {ece.item()}\n")
+            f.write(f"\nMCE: {mce.item()}\n")
+            f.write(f"\nAUC-ROC: {auroc}\n")
+            f.write(f"\nAVG-PREC: {avg_prec}\n")
+            f.write(f"\nConfusion matrix:\n{cm}\n")
+            f.write(f"\nT Loss: {training_loss}\n")
+            f.write(f"\nT Loss(reg): {training_loss_reg}\n")
+            f.write(f"\nV Loss: {loss.item()}\n\n")
             for k in params:
-                f.write("{} = {}\n".format(k,params[k]))
+                f.write("{} = {}\n".format(k, params[k]))
             f.close()
-            
-    return validation_loss
 
-
-
+    return (
+        training_loss,
+        loss.item(),
+        acc,
+        bacc,
+        ece.item(),
+        mce.item(),
+        auroc,
+        avg_prec,
+        fscore,
+    )

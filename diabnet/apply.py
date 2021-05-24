@@ -1,37 +1,73 @@
+import torch
 import pandas as pd
 import numpy as np
-import torch
-import os
-from diabnet.model import load
+from typing import List, Optional
 from diabnet.data import encode_features
+from diabnet.ensemble import Ensemble
 
-# from model import load
 
+# TODO:  Passar apply_ensemble.py para esse script.
 
 class Predictor(object):
-    """
-    Predictor for type 2 diabetes.
+    """Predictor for type 2 Diabetes (T2D).
+
+    Attributes
+    ----------
+    ensemble : Ensemble
+        A Ensemble of trained models.
+    features : List[str]
+        A list of feature names.
+    negatives : str, optional
+        A path to CSV-formatted file with negatives (patients without T2D),
+        ie "data/negatives-older-60.csv", by default None.
     """
 
-    def __init__(self, model, feature_names, negatives_csv=None):
-        """
-        Construct a predictor for type 2 diabetes .
+    def __init__(
+        self,
+        ensemble: Ensemble,
+        feature_names: List[str],
+        negatives_csv: Optional[str] = None,
+    ):
+        """Construct a predictor for type 2 Diabetes (T2D).
 
-        Parameters:
-        model(string): path to neural network previously trained and saved, i.e. "diabnet/models/model.pth"
-        feature_names(list(strings)): list with feature names
-        negatives_csv(string): path to csv file with negatives (pacients without diabetes), ie "diabnet/data/negatives_older60.csv"
+        Parameters
+        ----------
+        ensemble : Ensemble
+            A Ensemble of trained models.
+        features : List[str]
+            A list of feature names.
+        negatives : str, optional
+            A path to CSV-formatted file with negatives (patients without T2D),
+            ie "data/negatives-older-60.csv", by default None.
         """
-        # TODO assert len feature_names is equal to model input size
-        self.model = load(os.path.join(os.path.dirname(__file__), model))
+        # Check arguments
+        if type(ensemble) not in [Ensemble]:
+            raise TypeError("`ensemble` must be a diabnet.ensemble.Ensemble.")
+        if type(feature_names) not in [list]:
+            raise TypeError("`feature_names` must be a list of strings.")
+        if type(negatives_csv) not in [str]:
+            raise TypeError("`negatives_csv` must be a string.")
+        if not negatives_csv.endswith(".csv"):
+            raise ValueError("`negatives_csv` must be a CSV-formatted file.")
+        # TODO: Assert len feature_names is equal to model input size
+        # ??
+
+        # Pass arguments to attributes
+        self.ensemble = ensemble
         self.feat_names = feature_names
         self.negative_data = (
             get_negative_data(negatives_csv, self.feat_names)
-            if negatives_csv != None
+            if negatives_csv is not None
             else None
         )
 
-    def patient(self, feat, age=-1, bmi=-1, samples=100):
+    def patient(
+        self,
+        feat,
+        age: Optional[int] = -1,
+        bmi: Optional[int] = -1,
+        samples_per_model: int = 1,
+    ):
         """
         Parameters:
         feat: patient features snps (0,1,2), age and bmi.
@@ -48,9 +84,15 @@ class Predictor(object):
 
         # pass a copy of feature to NOT change original features
         features = self._encode_features(np.copy(feat), age=age, bmi=bmi)
-        return self._sampler(features, samples)
 
-    def negatives(self, age=-1, bmi=-1, samples=30):
+        return self._sampler(features, samples_per_model)
+
+    def negatives(
+        self,
+        age: Optional[int] = -1,
+        bmi: Optional[int] = -1,
+        samples_per_model: int = 1,
+    ):
         if bmi != -1 and "BMI" not in self.feat_names:
             print(
                 "Warning: BMI is not a feature for this network. Therefore, no impact at predicted values."
@@ -62,33 +104,33 @@ class Predictor(object):
                 f = self._encode_features(n, age=age, bmi=bmi)
                 # f = encode_features(self.feat_names, n)
                 # f = torch.tensor(f, dtype=torch.float)
-                p = self._sampler(f, samples)
+                p = self._sampler(f, samples_per_model)
                 probs.append(p)
             return np.concatenate(probs)
         else:
             print("No information about negatives")
             return None
 
-    def patient_life(self, feat, age_range=range(20, 90, 5), bmi=-1, samples=100):
+    def patient_life(
+        self, feat, age_range=list(range(20, 81, 5)), bmi=-1, samples_per_model=1
+    ):
         probs_by_age = []
         for age in age_range:
-            probs_by_age.append(self.patient(feat, age, bmi, samples))
+            probs_by_age.append(self.patient(feat, age, bmi, samples_per_model))
         return probs_by_age, age_range
 
-    def negatives_life(self, age_range=range(20, 90, 5), bmi=-1, samples=30):
+    def negatives_life(self, age_range=range(20, 81, 5), bmi=-1, samples_per_model=1):
         if self.negative_data is not None:
             probs_by_age = []
             for age in age_range:
-                probs_by_age.append(self.negatives(age, bmi, samples))
+                probs_by_age.append(self.negatives(age, bmi, samples_per_model))
             return probs_by_age, age_range
         else:
             print("No information about negatives")
             return None
 
-    def _sampler(self, x, n):
-        return np.array(
-            [torch.sigmoid(self.model(x)).detach().numpy()[0, 0] for i in range(n)]
-        )
+    def _sampler(self, x, samples_per_model):
+        return self.ensemble.apply(x, samples_per_model)
 
     def _encode_features(self, feat, age=-1, bmi=-1):
         if age >= 0:
