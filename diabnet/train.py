@@ -88,9 +88,9 @@ def train(
         [description]
     epochs : int
         [description]
-    prefix : Optional[str], optional
+    prefix : str, optional
         [description], by default None
-    logfile : Optional[str], optional
+    logfile : str, optional
         [description], by default None
     is_trial : bool, optional
         [description], by default False
