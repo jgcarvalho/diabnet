@@ -108,16 +108,13 @@ def train_ensemble(
                     dataset, [len_trainset, len(dataset) - len_trainset]
                 )
 
-                # Create output file
-                fout = f"{prefix}-{n:03}.pth"
-
                 # Train DiabNet model
                 train(
                     params,
                     trainset,
                     valset,
                     epochs,
-                    fout,
+                    f"{prefix}-{n:03}",
                     logfile,
                     device="cuda",
                     is_trial=False,
@@ -164,8 +161,13 @@ def train_from_cfg_file(config: Dict[str, Dict[str, Any]]) -> None:
 
             # Get filepath to data
             files = CATALOG[dataset]
-            # Prepare output file
-            prefix = f"results/models/{basename}"
+
+            # Prepare output prefix
+            prefix = f"results/models/{dataset}/{basename}"
+            if not os.path.exists(f"results/models/{dataset}"):
+                os.makedirs(f"results/models/{dataset}")
+
+            # Prepare log file
             log = f"results/logs/{basename}.log"
             # Training DiabNet for dataset
             for fn in files:

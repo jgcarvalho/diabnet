@@ -71,11 +71,42 @@ def train(
     training_set: DiabDataset,
     validation_set: DiabDataset,
     epochs: int,
-    fn_to_save_model: str = "",
+    prefix: Optional[str] = None,
     logfile: Optional[str] = None,
     is_trial: bool = False,
     device: str = "cuda",
 ):
+    """[summary]
+
+    Parameters
+    ----------
+    params : Dict[str, Dict[str, Any]]
+        [description]
+    training_set : DiabDataset
+        [description]
+    validation_set : DiabDataset
+        [description]
+    epochs : int
+        [description]
+    prefix : Optional[str], optional
+        [description], by default None
+    logfile : Optional[str], optional
+        [description], by default None
+    is_trial : bool, optional
+        [description], by default False
+    device : str, optional
+        [description], by default "cuda"
+
+    Returns
+    -------
+    [type]
+        [description]
+
+    Raises
+    ------
+    ValueError
+        [description]
+    """
     # Define the device on which a torch.Tensor will be allocated.
     device = torch.device(device)
 
@@ -152,7 +183,6 @@ def train(
         training_loss, training_loss_reg, n_batchs = 0.0, 0.0, 0
 
         # Iterate through training set
-        # with tqdm(trainloader) as train_bar:
         for i, sample in enumerate(trainloader):
             # Get input and true label
             x, y_true = sample
@@ -219,9 +249,6 @@ def train(
             # Calculate function
             loss = loss_func(y_pred, y_true.to(device))
 
-            # ece and mce are calibration metrics
-            # ece, mce = ece_mce(y_pred, y_true)
-
             # Binarize predictions
             # NOTE: The true labels (y_true) are soft labels. Hence,
             #  convert them to 0 or 1.
@@ -264,12 +291,14 @@ def train(
                 logfile.write(status_0 + "\n")
                 logfile.write(status_1 + "\n")
 
-    if fn_to_save_model != "":
-        # print("Saving model at {}".format(fn_to_save_model))
-        torch.save(model, fn_to_save_model)
-        with open(fn_to_save_model + ".txt", "w") as f:
+    if prefix is not None:
+        # Save trained model
+        torch.save(model, f"{prefix}.pth")
+
+        # Save trained model metrics and parameters
+        with open(f"{prefix}.txt", "w") as f:
             f.write(str(datetime.datetime.now()))
-            f.write(f"\nModel name: {fn_to_save_model}\n")
+            f.write(f"\nModel name: {prefix}.pth\n")
             f.write(f"\nAccuracy: {acc}\n")
             f.write(f"\nBalanced Accuracy: {bacc}\n")
             f.write(f"\nF-score: {fscore}\n")
