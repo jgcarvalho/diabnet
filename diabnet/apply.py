@@ -5,8 +5,10 @@ from typing import List, Optional
 from diabnet.data import encode_features
 from diabnet.ensemble import Ensemble
 
+__all__ = ["Predictor", "get_negative_data"]
 
 # TODO:  Passar apply_ensemble.py para esse script.
+
 
 class Predictor(object):
     """Predictor for type 2 Diabetes (T2D).

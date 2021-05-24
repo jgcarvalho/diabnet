@@ -4,6 +4,8 @@ import numpy as np
 from torch.utils.data import Dataset
 from typing import List, Any, Tuple
 
+__all__ = ["DiabDataset", "get_feature_names", "encode_features"]
+
 
 def get_feature_names(
     fn: str,
@@ -241,9 +243,6 @@ def _len_encoding(feat_names: List[str]) -> int:
     return len(feat_names)
 
 
-# TODO:
-# - get_features_names() inside DiabDataset.__init__() and remove
-#  `feat_names` parameter.
 class DiabDataset(Dataset):
     """DiabNet Dataset.
 

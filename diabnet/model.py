@@ -1,6 +1,8 @@
 import torch
 from torch import nn
 
+__all__ = ["Model", "load"]
+
 
 class LocallyConnected(nn.Module):
     """LocallyConnected Layer generates a single value representation for each
@@ -149,7 +151,7 @@ class Model(nn.Module):
         # Define fully connected with batch normalization
         self.fc = nn.Linear(n_feat, n_hidden, bias=False)
         self.bn = nn.BatchNorm1d(n_hidden)
-        # Define activation function 
+        # Define activation function
         # [Options: GELU, Softplus, ReLU, ELU]
         self.act = nn.GELU()
 

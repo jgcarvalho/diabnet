@@ -18,6 +18,9 @@ from diabnet.metrics import ece_mce
 from diabnet.data import DiabDataset
 
 
+__all__ = ["train"]
+
+
 def l1_l2_regularization(
     lc_params: torch.nn.parameter.Parameter,
     lambda1_dim1: float,

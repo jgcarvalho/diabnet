@@ -3,6 +3,8 @@ from glob import glob
 import numpy as np
 from diabnet.model import load, Model
 
+__all__ = ["Ensemble"]
+
 
 class Ensemble(object):
     """Class that keeps an ensemble of models loaded from "pth" files using
