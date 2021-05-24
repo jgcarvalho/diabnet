@@ -1,5 +1,8 @@
-from .data import *
-from .model import *
-from .ensemble import *
-from .train import *
+__name__ = "DiabNet"
+__version__ = "0.1.0"
+
 from .apply import *
+from .data import *
+from .ensemble import *
+from .model import *
+from .train import *

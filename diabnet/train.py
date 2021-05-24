@@ -1,10 +1,8 @@
-from typing import Dict, Any, Optional
-import datetime
 import torch
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader
 from torch.nn import BCEWithLogitsLoss
-from torch.optim import Adam, SGD, AdamW
-from torch.optim.lr_scheduler import CosineAnnealingLR, StepLR
+from torch.optim import AdamW
+from torch.optim.lr_scheduler import StepLR
 from sklearn.metrics import (
     accuracy_score,
     balanced_accuracy_score,
@@ -13,27 +11,32 @@ from sklearn.metrics import (
     average_precision_score,
     fbeta_score,
 )
+from tqdm import tqdm
+from typing import Dict, Any, Optional
+import datetime
 from diabnet.model import Model
 from diabnet.metrics import ece_mce
 from diabnet.data import DiabDataset
 
-
 __all__ = ["train"]
 
 
-def l1_l2_regularization(
+def _l1_l2_regularization(
     lc_params: torch.nn.parameter.Parameter,
     lambda1_dim1: float,
     lambda2_dim1: float,
     lambda1_dim2: float,
     lambda2_dim2: float,
-):
-    """[summary]
+) -> torch.Tensor:
+    """Applies L1 (Lasso) and L2 (Ridge) regularization to
+    Locally Connected layer of DiabNet. This combined
+    regularization avoid overfitting and reduce the
+    contributin of less important features to DiabNet.
 
     Parameters
     ----------
     lc_params : torch.nn.parameter.Parameter
-        [description]
+        Parameters of Locally Connected layer of DiabNet.
     lambda1_dim1 : float
         [description]
     lambda2_dim1 : float
@@ -45,8 +48,8 @@ def l1_l2_regularization(
 
     Returns
     -------
-    [type]
-        [description]
+    torch.Tensor
+        L1 and L2 regularized loss.
     """
     l1_regularization_dim1 = lambda2_dim1 * torch.sum(torch.norm(lc_params, 1, dim=1))
     l2_regularization_dim1 = (
@@ -64,7 +67,7 @@ def l1_l2_regularization(
 
 
 def train(
-    params: Dict[str, Any],
+    params: Dict[str, Dict[str, Any]],
     training_set: DiabDataset,
     validation_set: DiabDataset,
     epochs: int,
@@ -149,6 +152,7 @@ def train(
         training_loss, training_loss_reg, n_batchs = 0.0, 0.0, 0
 
         # Iterate through training set
+        # with tqdm(trainloader) as train_bar:
         for i, sample in enumerate(trainloader):
             # Get input and true label
             x, y_true = sample
@@ -160,12 +164,12 @@ def train(
             loss = loss_func(y_pred, y_true.to(device))
 
             # l1 and l2 regularization at LC layer
-            loss_reg = loss + l1_l2_regularization(
+            loss_reg = loss + _l1_l2_regularization(
                 model.lc.weight, lambda1_dim1, lambda2_dim1, lambda1_dim2, lambda2_dim2
             )
 
             # Flood regularization
-            # https://arxiv.org/pdf/2002.08709.pdf
+            # Reference: https://arxiv.org/pdf/2002.08709.pdf
             flood = (loss_reg - flood_penalty).abs() + flood_penalty
 
             # Sets the gradients of all optimized torch.Tensor s to zero.
