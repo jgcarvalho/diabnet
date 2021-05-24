@@ -44,7 +44,7 @@ The DiabNet training is done via training.py, using a configuration file.
 To train DiabNet with 1000 positive SNPs, run: 
 
 ```bash
-python3 training.py config/simple-training.toml
+python3 training.py configs/simple-training.toml
 ```
 
 ### Full training
@@ -52,7 +52,7 @@ python3 training.py config/simple-training.toml
 To train DiabNet with different datasets (1000 positive SNPs, 1000 random SNPs, 1000 negative SNPs, shuffled features, family exclusion), run:
 
 ```bash
-python3 training.py config/full-training.toml
+python3 training.py configs/full-training.toml
 ```
 
 ## Data analysis
