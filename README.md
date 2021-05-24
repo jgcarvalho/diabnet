@@ -37,4 +37,22 @@ poetry shell
 
 ## Training DiabNet
 
+The DiabNet training is done via training.py, using a configuration file.
+
+### Simple training
+
+To train DiabNet with 1000 positive SNPs, run: 
+
+```bash
+python3 training.py config/simple-training.toml
+```
+
+### Full training
+
+To train DiabNet with different datasets (1000 positive SNPs, 1000 random SNPs, 1000 negative SNPs, shuffled features, family exclusion), run:
+
+```bash
+python3 training.py config/full-training.toml
+```
+
 ## Data analysis
