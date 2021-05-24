@@ -1,4 +1,5 @@
-title = "Simple Analysis for DiabNet"
+title = "Simple Training Procedure for DiabNet"
+# Train DiabNet with 1000 associated SNPs
 
 [params]
 hidden-neurons=13

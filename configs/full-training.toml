@@ -1,4 +1,5 @@
-title = "Full Analysis for DiabNet"
+title = "Full Training Procedure for DiabNet"
+# Train DiabNet with all available datasets
 
 [params]
 hidden-neurons=13
