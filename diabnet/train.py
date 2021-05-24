@@ -265,7 +265,7 @@ def train(
                 logfile.write(status_1 + "\n")
 
     if fn_to_save_model != "":
-        print("Saving model at {}".format(fn_to_save_model))
+        # print("Saving model at {}".format(fn_to_save_model))
         torch.save(model, fn_to_save_model)
         with open(fn_to_save_model + ".txt", "w") as f:
             f.write(str(datetime.datetime.now()))

@@ -1,37 +1,45 @@
 import os
+from tqdm import tqdm
 from typing import Dict, Any
 from datetime import date
-
-# import toml
-from sys import argv
 from torch.utils.data import random_split
-from diabnet import data
+from diabnet.data import get_feature_names, DiabDataset
 from diabnet.train import train
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
 CATALOG = {
-    "positive": os.path.join(
-        DATA_DIR, "visits_sp_unique_train_positivo_1000_random_0.csv"
-    ),
-    "random": os.path.join(
-        DATA_DIR, "visits_sp_unique_train_positivo_0_random_1000.csv"
-    ),
-    "negative": os.path.join(
-        DATA_DIR, "visits_sp_unique_train_positivo_0_negative_1000.csv"
-    ),
-    "shuffled-snps": os.path.join(
-        DATA_DIR, "visits_sp_unique_train_shuffled_snps_positivo_1000_random_0.csv"
-    ),
-    "shuffled-labels": os.path.join(
-        DATA_DIR, "visits_sp_unique_train_shuffled_labels_positivo_1000_random_0.csv"
-    ),
-    "shuffled-ages": os.path.join(
-        DATA_DIR, "visits_sp_unique_train_shuffled_ages_positivo_1000_random_0.csv"
-    ),
-    "shuffled-parents": os.path.join(
-        DATA_DIR, "visits_sp_unique_train_shuffled_parents_positivo_1000_random_0.csv"
-    ),
+    "positive": [
+        os.path.join(DATA_DIR, "visits_sp_unique_train_positivo_1000_random_0.csv")
+    ],
+    "random": [
+        os.path.join(DATA_DIR, "visits_sp_unique_train_positivo_0_random_1000.csv")
+    ],
+    "negative": [
+        os.path.join(DATA_DIR, "visits_sp_unique_train_positivo_0_negative_1000.csv")
+    ],
+    "shuffled-snps": [
+        os.path.join(
+            DATA_DIR, "visits_sp_unique_train_shuffled_snps_positivo_1000_random_0.csv"
+        )
+    ],
+    "shuffled-labels": [
+        os.path.join(
+            DATA_DIR,
+            "visits_sp_unique_train_shuffled_labels_positivo_1000_random_0.csv",
+        )
+    ],
+    "shuffled-ages": [
+        os.path.join(
+            DATA_DIR, "visits_sp_unique_train_shuffled_ages_positivo_1000_random_0.csv"
+        )
+    ],
+    "shuffled-parents": [
+        os.path.join(
+            DATA_DIR,
+            "visits_sp_unique_train_shuffled_parents_positivo_1000_random_0.csv",
+        )
+    ],
     "families": [
         os.path.join(
             DATA_DIR,
@@ -42,22 +50,42 @@ CATALOG = {
 }
 
 
-def net(
-    fn_dataset: str,
-    fn_out_prefix: str,
-    fn_log: str,
+def train_ensemble(
+    fn: str,
+    prefix: str,
+    log: str,
     params: Dict[str, Dict[str, Any]],
     epochs: int,
     n_ensemble: int,
 ) -> None:
-    with open(fn_log, "w") as logfile:
-        logfile.write(f"PARAMETERS {params}\n")
-        feat_names = data.get_feature_names(
-            fn_dataset, use_sex=True, use_parents_diagnosis=True
-        )
+    """Train an ensemble of DiabNets.
 
-        dataset = data.DiabDataset(
-            fn_dataset,
+    Parameters
+    ----------
+    fn : str
+        A path to a dataset.
+    prefix : str
+        A prefix to output files.
+    log : str
+        A path to a log file.
+    params : Dict[str, Dict[str, Any]]
+        A dictionary with DiabNet parameters.
+    epochs : int
+        Number of epochs.
+    n_ensemble : int
+        Number of models in the emsemble.
+    """
+    # Open log file
+    with open(log, "w") as logfile:
+        # Write parameters to log file
+        logfile.write(f"PARAMETERS {params}\n")
+
+        # Get feature names
+        feat_names = get_feature_names(fn, use_sex=True, use_parents_diagnosis=True)
+
+        # Create DiabNet dataset
+        dataset = DiabDataset(
+            fn,
             feat_names,
             label_name="T2D",
             soft_label=True,
@@ -69,145 +97,81 @@ def net(
         # 10% from training_set to use as validation
         len_trainset = int(0.9 * len(dataset))
 
-        for i in range(n_ensemble):
-            print(f"Model {i:03}")
-            logfile.write(f"Model {i:03}\n")
-            trainset, valset = random_split(
-                dataset, [len_trainset, len(dataset) - len_trainset]
-            )
+        # Train n_ensemble models of DiabNet for epochs
+        with tqdm(range(n_ensemble)) as progress:
+            for n in progress:
+                # Write model number to log file
+                logfile.write(f"Model {n:03}\n")
 
-            fn_out = f"{fn_out_prefix}-{i:03}.pth"
+                # Split training and validation sets
+                trainset, valset = random_split(
+                    dataset, [len_trainset, len(dataset) - len_trainset]
+                )
 
-            train(
-                params,
-                trainset,
-                valset,
-                epochs,
-                fn_out,
-                logfile,
-                device="cuda",
-                is_trial=False,
-            )
+                # Create output file
+                fout = f"{prefix}-{n:03}.pth"
+
+                # Train DiabNet model
+                train(
+                    params,
+                    trainset,
+                    valset,
+                    epochs,
+                    fout,
+                    logfile,
+                    device="cuda",
+                    is_trial=False,
+                )
+                progress.set_description(f"Trained models: [{n+1}/{n_ensemble}]")
 
 
-def train_from(config: Dict[str, Dict[str, Any]]) -> None:
-    print(f'Title {config["title"]}')
+def train_from_cfg_file(config: Dict[str, Dict[str, Any]]) -> None:
+    """Prepare DiabNet training procedure based on a configuration
+    file.
+
+    Parameters
+    ----------
+    config : Dict[str, Dict[str, Any]]
+        A dictionary containing information from a configuration file to
+        train DiabNet (parameters, run conditions and datasets).
+    """
+    # Print configuration file title
+    print("[" + ("=" * (len(config["title"]) + 18)) + "]")
+    print(f"[======== {config['title']} ========]")
+
+    # Get date
     d = date.today().isoformat()
-    slot = {}
 
-    fn = f'model-{slot}-{config["params"]["hidden-neurons"]}-{config["params"]["optimizer"]}-{config["params"]["lc-layer"]}-{d}'
+    # Create results directory
+    for dn in ["./results", "./results/models", "./results/logs"]:
+        if not os.path.exists(dn):
+            os.makedirs(dn)
 
-    if config["datasets"]["positive"]:
-        dataset = "data/visits_sp_unique_train_positivo_1000_random_0.csv"
-        fn_out = "results/models/" + fn.format("positive")
-        fn_log = "results/logs/" + fn.format("positive")
-        net(
-            dataset,
-            fn_out,
-            fn_log,
-            config["params"],
-            config["run"]["epochs"],
-            config["run"]["ensemble"],
-        )
+    # Deserialize configuration file
+    parameters = config["params"]
+    epochs = config["run"]["epochs"]
+    ensemble = config["run"]["ensemble"]
+    datasets = config["datasets"]
 
-    if config["datasets"]["random"]:
-        dataset = "data/visits_sp_unique_train_positivo_0_random_1000.csv"
-        fn_out = "results/models/" + fn.format("random")
-        fn_log = "results/logs/" + fn.format("random")
-        net(
-            dataset,
-            fn_out,
-            fn_log,
-            config["params"],
-            config["run"]["epochs"],
-            config["run"]["ensemble"],
-        )
+    # Iterate through datasets
+    for dataset in datasets:
 
-    if config["datasets"]["negative"]:
-        dataset = "data/visits_sp_unique_train_positivo_0_negative_1000.csv"
-        fn_out = "results/models/" + fn.format("negative")
-        fn_log = "results/logs/" + fn.format("negative")
-        net(
-            dataset,
-            fn_out,
-            fn_log,
-            config["params"],
-            config["run"]["epochs"],
-            config["run"]["ensemble"],
-        )
+        # Create basename for files
+        basename = f"model-{dataset}-{parameters['hidden-neurons']}-{parameters['optimizer']}-{parameters['lc-layer']}-{d}"
 
-    if config["datasets"]["shuffled-snps"]:
-        dataset = "data/visits_sp_unique_train_shuffled_snps_positivo_1000_random_0.csv"
-        fn_out = "results/models/" + fn.format("shuffled-snps")
-        fn_log = "results/logs/" + fn.format("shuffled-snps")
-        net(
-            dataset,
-            fn_out,
-            fn_log,
-            config["params"],
-            config["run"]["epochs"],
-            config["run"]["ensemble"],
-        )
+        if datasets[dataset]:
+            print(f"[==> {dataset}")
 
-    if config["datasets"]["shuffled-labels"]:
-        dataset = (
-            "data/visits_sp_unique_train_shuffled_labels_positivo_1000_random_0.csv"
-        )
-        fn_out = "results/models/" + fn.format("shuffled-labels")
-        fn_log = "results/logs/" + fn.format("shuffled-labels")
-        net(
-            dataset,
-            fn_out,
-            fn_log,
-            config["params"],
-            config["run"]["epochs"],
-            config["run"]["ensemble"],
-        )
+            # Get filepath to data
+            files = CATALOG[dataset]
+            # Prepare output file
+            prefix = f"results/models/{basename}"
+            log = f"results/logs/{basename}.log"
+            # Training DiabNet for dataset
+            for fn in files:
+                train_ensemble(fn, prefix, log, parameters, epochs, ensemble)
 
-    if config["datasets"]["shuffled-ages"]:
-        dataset = "data/visits_sp_unique_train_shuffled_ages_positivo_1000_random_0.csv"
-        fn_out = "results/models/" + fn.format("shuffled-ages")
-        fn_log = "results/logs/" + fn.format("shuffled-ages")
-        net(
-            dataset,
-            fn_out,
-            fn_log,
-            config["params"],
-            config["run"]["epochs"],
-            config["run"]["ensemble"],
-        )
-
-    if config["datasets"]["shuffled-parents"]:
-        dataset = (
-            "data/visits_sp_unique_train_shuffled_parents_positivo_1000_random_0.csv"
-        )
-        fn_out = "results/models/" + fn.format("shuffled-parents")
-        fn_log = "results/logs/" + fn.format("shuffled-parents")
-        net(
-            dataset,
-            fn_out,
-            fn_log,
-            config["params"],
-            config["run"]["epochs"],
-            config["run"]["ensemble"],
-        )
-
-    if config["datasets"]["families"]:
-
-        for fam_id in [0, 10, 14, 1, 30, 32, 33, 3, 43, 7]:
-            dataset = (
-                f"data/visits_sp_unique_train_famid_{fam_id}_positivo_1000_random_0.csv"
-            )
-            fn_out = f'results/models/model-positive-famid-{fam_id}-{config["params"]["hidden-neurons"]}-{config["params"]["optimizer"]}-{config["params"]["lc-layer"]}-{d}'
-            fn_log = f'results/logs/model-positive-famid-{fam_id}-{config["params"]["hidden-neurons"]}-{config["params"]["optimizer"]}-{config["params"]["lc-layer"]}-{d}'
-            net(
-                dataset,
-                fn_out,
-                fn_log,
-                config["params"],
-                config["run"]["epochs"],
-                config["run"]["ensemble"],
-            )
+    print("[" + ("=" * (len(config["title"]) + 18)) + "]")
 
 
 def main() -> None:
@@ -254,7 +218,7 @@ def main() -> None:
     args = parser.parse_args()
 
     # Train DiabNet from file
-    train_from(toml.load(args.config))
+    train_from_cfg_file(toml.load(args.config))
 
 
 if __name__ == "__main__":
