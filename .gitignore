@@ -7,6 +7,11 @@ poetry.toml
 # Ignore all data
 data/
 
+# Ignore results
+results/
+results/logs/
+results/models/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
