@@ -79,9 +79,8 @@ python3 training.py configs/full-training.toml
 
 Data analysis is performed through a collection of Jupyter Notebooks in the `analysis` directory, that are:
 
-```bash
-01-training-results-analysis.ipynb
-```
+- `01-training-results-analysis.ipynb`
+- `...`
 
 First of all, the poetry virtual environment must be manually added to the IPython to be available on Jupyter.
 
