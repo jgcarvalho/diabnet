@@ -88,8 +88,15 @@ First of all, the poetry virtual environment must be manually added to the IPyth
 python -m ipykernel install --user --name=.venv
 ```
 
-Afterwards, you can run each Jupyter Notebook to visualize DiabNet results.
+Afterwards, you can run each Jupyter Notebook to visualize DiabNet results with explanations.
 
 ```bash
 jupyter notebook --notebook-dir analysis
+```
+
+However, you may prefer to run all analyzes via bash, that will produce the same images of the Jupyter Notebooks. So run:
+
+```bash
+# (NOT WORKING)
+python3 analysis/analysis.py
 ```
