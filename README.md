@@ -35,13 +35,32 @@ To start the virtual environment, run:
 poetry shell
 ```
 
+## DiabNet SNPs datasets
+
+There are three sets with 1000 SNPs, each has been defined:
+
+- associated SNPs;
+- not associated SNPs;
+- random SNPs or randomly choosen SNPs.
+
+Besides these sets, we made another four derived from the associated SNPs set, that are:
+
+- shuffled labels;
+- shuffled ages;
+- shuffled parent diagnosis;
+- shuffled SNPs or shuffled associated SNPs.
+
+These shuffled sets were used to analyze the importance of some features, e. g. labels, ages, parent diagnosis and SNPs. The great capacity of neural networks to fit data during training are well known. Thus, we are looking for the impact of this artificial noise on the inference of the validation subset.
+
+The shuffled associated SNPs set was created to preserve the observed frequency for each SNP. With that, we reduced a possible bias present in the regularization parameters that could affect the training using both non-associated and random SNPs sets.
+
 ## Training DiabNet
 
 The DiabNet training is done via training.py, using a configuration file.
 
 ### Simple training
 
-To train DiabNet with 1000 positive SNPs, run: 
+To train DiabNet with 1000 associated SNPs, run: 
 
 ```bash
 python3 training.py configs/simple-training.toml
@@ -49,7 +68,7 @@ python3 training.py configs/simple-training.toml
 
 ### Full training
 
-To train DiabNet with different datasets (1000 positive SNPs, 1000 random SNPs, 1000 negative SNPs, shuffled features, family exclusion), run:
+To train DiabNet with different datasets (1000 associated SNPs, 1000 non-associated SNPs, 1000 random SNPs, shuffled features, family exclusion), run:
 
 ```bash
 python3 training.py configs/full-training.toml
