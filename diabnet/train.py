@@ -11,11 +11,10 @@ from sklearn.metrics import (
     average_precision_score,
     fbeta_score,
 )
-from tqdm import tqdm
 from typing import Dict, Any, Optional
 import datetime
 from diabnet.model import Model
-from diabnet.metrics import ece_mce
+from diabnet.metrics import ece_mce, ece, mce
 from diabnet.data import DiabDataset
 
 __all__ = ["train"]
