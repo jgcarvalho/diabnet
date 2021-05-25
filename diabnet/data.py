@@ -428,39 +428,3 @@ class DiabDataset(Dataset):
     #     self.labels = torch.unsqueeze(torch.tensor(labels, dtype=torch.float), 1).to(
     #         "cuda"
     #     )
-
-
-# FIXME: Remove after creating tests
-if __name__ == "__main__":
-    # Get path to positive-dataset
-    DATASET = "data/visits_sp_unique_train_positivo_1000_random_0.csv"
-
-    # Extract features
-    features = get_feature_names(DATASET)
-    # print(features)
-
-    # Create DiabDataset
-    dataset = DiabDataset(DATASET, features, soft_label=True)
-
-    # __getitem__
-    print(dataset[0])  # patient 0
-    print(dataset[0][0])  # features
-    print(dataset[0][1])  # label
-
-    # __len__
-    print(len(dataset))  # number of patients
-
-    # Display attributes and their shape
-    print(dataset.feat_names[0])  # features names
-    print(len(dataset.feat_names))  # shape of features names
-    print(dataset.n_feat)  # number of features
-    print(dataset.features[0])  # features
-    print(dataset.features.shape)  # shape of features
-    print(dataset.labels[0])  # labels
-    print(dataset.labels.shape)  # shape of labels
-    print(dataset._raw_values[0])  # raw feature values
-    print(dataset._raw_values.shape)  # shape of raw feature values
-    print(dataset._raw_labels[0])  # raw target labels
-    print(dataset._raw_labels.shape)  # shape of raw target labels
-    print(dataset._ages[0])  # ages
-    print(dataset._ages.shape)  # shape of ages

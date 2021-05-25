@@ -237,7 +237,7 @@ def load(filename: str) -> Model:
 
     # ! Comment this line when using mc-dropout
     # This method switch Model to `eval` mode.
-    # FIXME: Dropout an BatchNorm behave differently during training
+    # NOTE: Dropout an BatchNorm behave differently during training
     # and evaluation
     net.eval()
 

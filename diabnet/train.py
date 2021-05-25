@@ -27,6 +27,7 @@ def _l1_l2_regularization(
     lambda1_dim2: float,
     lambda2_dim2: float,
 ) -> torch.Tensor:
+    # TODO: Document variables
     """Applies L1 (Lasso) and L2 (Ridge) regularization to
     Locally Connected layer of DiabNet. This combined
     regularization avoid overfitting and reduce the
@@ -75,6 +76,7 @@ def train(
     is_trial: bool = False,
     device: str = "cuda",
 ):
+    # TODO: Document function + typing return
     """[summary]
 
     Parameters
@@ -104,7 +106,7 @@ def train(
     Raises
     ------
     ValueError
-        [description]
+        `optimizer` must be `adamw`.
     """
     # Define the device on which a torch.Tensor will be allocated.
     device = torch.device(device)

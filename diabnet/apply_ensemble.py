@@ -1,37 +1,66 @@
+import torch
 import pandas as pd
 import numpy as np
-import torch
-import os
-
-# from diabnet.model import load
-from diabnet.ensemble import Ensemble
+from typing import List, Optional
 from diabnet.data import encode_features
+from diabnet.ensemble import Ensemble
 
-# from model import load
+# TODO: Document and clean this file based on the usage in the Jupyter
+# Notebooks
 
 __all__ = ["Predictor", "get_negative_data"]
 
 
 class Predictor(object):
-    """
-    Predictor for type 2 diabetes.
+    """Predictor for type 2 Diabetes (T2D).
+
+    Attributes
+    ----------
+    ensemble : Ensemble
+        A Ensemble of trained models.
+    features : List[str]
+        A list of feature names.
+    negatives : str, optional
+        A path to CSV-formatted file with negatives (patients without T2D),
+        ie "data/negatives-older-60.csv", by default None.
     """
 
-    def __init__(self, ensemble, feature_names, negatives_csv=None):
-        """
-        Construct a predictor for type 2 diabetes .
+    def __init__(
+        self,
+        ensemble: Ensemble,
+        feature_names: List[str],
+        negatives_csv: Optional[str] = None,
+    ):
+        """Construct a predictor for type 2 Diabetes (T2D).
 
-        Parameters:
-        ensemble(diabnet.Ensemble)
-        feature_names(list(strings)): list with feature names
-        negatives_csv(string): path to csv file with negatives (pacients without diabetes), ie "diabnet/data/negatives_older60.csv"
+        Parameters
+        ----------
+        ensemble : Ensemble
+            A Ensemble of trained models.
+        features : List[str]
+            A list of feature names.
+        negatives : str, optional
+            A path to CSV-formatted file with negatives (patients without T2D),
+            ie "data/negatives-older-60.csv", by default None.
         """
-        # TODO assert len feature_names is equal to model input size
+        # Check arguments
+        if type(ensemble) not in [Ensemble]:
+            raise TypeError("`ensemble` must be a diabnet.ensemble.Ensemble.")
+        if type(feature_names) not in [list]:
+            raise TypeError("`feature_names` must be a list of strings.")
+        if type(negatives_csv) not in [str]:
+            raise TypeError("`negatives_csv` must be a string.")
+        if not negatives_csv.endswith(".csv"):
+            raise ValueError("`negatives_csv` must be a CSV-formatted file.")
+        # TODO: Assert len feature_names is equal to model input size
+        # ??
+
+        # Pass arguments to attributes
         self.ensemble = ensemble
         self.feat_names = feature_names
         self.negative_data = (
             get_negative_data(negatives_csv, self.feat_names)
-            if negatives_csv != None
+            if negatives_csv is not None
             else None
         )
 
