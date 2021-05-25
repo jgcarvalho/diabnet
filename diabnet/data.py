@@ -308,7 +308,7 @@ class DiabDataset(Dataset):
         if type(soft_label) not in [bool]:
             raise TypeError("`soft_label` must be a boolean.")
         if type(soft_label_baseline) not in [float]:
-            raise TypeError("`soft_label_baseline` must be a floating poin.")
+            raise TypeError("`soft_label_baseline` must be a floating point.")
         if type(soft_label_topline) not in [float]:
             raise TypeError("`soft_label_topline` must be a floating point.")
         if type(soft_label_baseline_slope) not in [float]:
