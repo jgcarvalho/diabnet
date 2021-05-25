@@ -9,14 +9,6 @@ class TestMetrics(unittest.TestCase):
         self.targets = torch.arange(0.0, 1.0, 0.01)
         self.predictions = torch.arange(0.0, 1.0, 0.01)
 
-    # def test_ece(self):
-    #     result = ece(self.targets, self.predictions, 10)
-    #     self.assertEqual(result, 0.0)
-
-    # def test_mce(self):
-    #     result = mce(self.targets, self.predictions, 10)
-    #     self.assertEqual(result, 0.0)
-
     def test_mce_ece(self):
         # torch.Tensor inputs
         result = ece_mce(self.predictions, self.targets, 10)
