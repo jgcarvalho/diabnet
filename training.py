@@ -9,44 +9,36 @@ from diabnet.train import train
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
 CATALOG = {
-    "positive": [
-        os.path.join(DATA_DIR, "visits_sp_unique_train_positivo_1000_random_0.csv")
-    ],
-    "random": [
-        os.path.join(DATA_DIR, "visits_sp_unique_train_positivo_0_random_1000.csv")
-    ],
-    "negative": [
-        os.path.join(DATA_DIR, "visits_sp_unique_train_positivo_0_negative_1000.csv")
-    ],
-    "shuffled-snps": [
-        os.path.join(
-            DATA_DIR, "visits_sp_unique_train_shuffled_snps_positivo_1000_random_0.csv"
-        )
-    ],
-    "shuffled-labels": [
-        os.path.join(
-            DATA_DIR,
-            "visits_sp_unique_train_shuffled_labels_positivo_1000_random_0.csv",
-        )
-    ],
-    "shuffled-ages": [
-        os.path.join(
-            DATA_DIR, "visits_sp_unique_train_shuffled_ages_positivo_1000_random_0.csv"
-        )
-    ],
-    "shuffled-parents": [
-        os.path.join(
-            DATA_DIR,
-            "visits_sp_unique_train_shuffled_parents_positivo_1000_random_0.csv",
-        )
-    ],
-    "families": [
-        os.path.join(
+    "positive": os.path.join(
+        DATA_DIR, "visits_sp_unique_train_positivo_1000_random_0.csv"
+    ),
+    "random": os.path.join(
+        DATA_DIR, "visits_sp_unique_train_positivo_0_random_1000.csv"
+    ),
+    "negative": os.path.join(
+        DATA_DIR, "visits_sp_unique_train_positivo_0_negative_1000.csv"
+    ),
+    "shuffled-snps": os.path.join(
+        DATA_DIR, "visits_sp_unique_train_shuffled_snps_positivo_1000_random_0.csv"
+    ),
+    "shuffled-labels": os.path.join(
+        DATA_DIR,
+        "visits_sp_unique_train_shuffled_labels_positivo_1000_random_0.csv",
+    ),
+    "shuffled-ages": os.path.join(
+        DATA_DIR, "visits_sp_unique_train_shuffled_ages_positivo_1000_random_0.csv"
+    ),
+    "shuffled-parents": os.path.join(
+        DATA_DIR,
+        "visits_sp_unique_train_shuffled_parents_positivo_1000_random_0.csv",
+    ),
+    "families": {
+        fam_id: os.path.join(
             DATA_DIR,
             f"visits_sp_unique_train_famid_{fam_id}_positivo_1000_random_0.csv",
         )
         for fam_id in [0, 10, 14, 1, 30, 32, 33, 3, 43, 7]
-    ],
+    },
 }
 
 
@@ -153,25 +145,44 @@ def train_from_cfg_file(config: Dict[str, Dict[str, Any]]) -> None:
     # Iterate through datasets
     for dataset in datasets:
 
-        # Create basename for files
-        basename = f"model-{dataset}-{parameters['hidden-neurons']}-{parameters['optimizer']}-{parameters['lc-layer']}-{d}"
-
         if datasets[dataset]:
             print(f"[==> {dataset}")
 
-            # Get filepath to data
-            files = CATALOG[dataset]
-
-            # Prepare output prefix
-            prefix = f"results/models/{dataset}/{basename}"
+            # Prepare output directory
             if not os.path.exists(f"results/models/{dataset}"):
                 os.makedirs(f"results/models/{dataset}")
 
-            # Prepare log file
-            log = f"results/logs/{basename}.log"
-            # Training DiabNet for dataset
-            for fn in files:
-                train_ensemble(fn, prefix, log, parameters, epochs, ensemble)
+            if dataset == "families":
+
+                for famid, fn in CATALOG[dataset].items():
+
+                    # Create basename for files
+                    basename = f"model-famid-{famid}-{parameters['hidden-neurons']}-{parameters['optimizer']}-{parameters['lc-layer']}-{d}"
+
+                    # Prepare prefix
+                    if not os.path.exists(f"results/models/{dataset}/famid{famid}"):
+                        os.makedirs(f"results/models/{dataset}/famid{famid}")
+                    prefix = f"results/models/{dataset}/famid{famid}/{basename}"
+
+                    # Prepare log file
+                    log = f"results/logs/{basename}.log"
+
+                    train_ensemble(fn, prefix, log, parameters, epochs, ensemble)
+
+            else:
+                # Create basename for files
+                basename = f"model-{dataset}-{parameters['hidden-neurons']}-{parameters['optimizer']}-{parameters['lc-layer']}-{d}"
+
+                # Prepare output prefix
+                prefix = f"results/models/{dataset}/{basename}"
+
+                # Prepare log file
+                log = f"results/logs/{basename}.log"
+
+                # Training DiabNet for dataset
+                train_ensemble(
+                    CATALOG[dataset], prefix, log, parameters, epochs, ensemble
+                )
 
     print("[" + ("=" * (len(config["title"]) + 18)) + "]")
 
