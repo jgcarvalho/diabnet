@@ -48,7 +48,8 @@ Besides these sets, we made another four derived from the associated SNPs set, t
 - shuffled labels;
 - shuffled ages;
 - shuffled parent diagnosis;
-- shuffled SNPs or shuffled associated SNPs.
+- shuffled SNPs or shuffled associated SNPs;
+- family exclusion.
 
 These shuffled sets were used to analyze the importance of some features, e. g. labels, ages, parent diagnosis and SNPs. The great capacity of neural networks to fit data during training are well known. Thus, we are looking for the impact of this artificial noise on the inference of the validation subset.
 
@@ -75,3 +76,21 @@ python3 training.py configs/full-training.toml
 ```
 
 ## Data analysis
+
+Data analysis is performed through a collection of Jupyter Notebooks in the `analysis` directory, that are:
+
+```bash
+01-training-results-analysis.ipynb
+```
+
+First of all, the poetry virtual environment must be manually added to the IPython to be available on Jupyter.
+
+```bash
+python -m ipykernel install --user --name=.venv
+```
+
+Afterwards, you can sucessfully run each Jupyter Notebook to visualize DiabNet results.
+
+```bash
+jupyter notebook --notebook-dir analysis
+```
